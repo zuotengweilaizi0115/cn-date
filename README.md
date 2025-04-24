@@ -1,4 +1,4 @@
-# cn-date
+# chinese_date_practice
 中国語の日付・曜日ランダム生成アプリ
 # プロジェクト名
 
