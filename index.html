@@ -5,8 +5,10 @@
   <title>日付・曜日を中国語で練習</title>
   <style>
     body { font-family: sans-serif; text-align: center; padding: 2em; }
-    button, select { padding: 1em; margin: 1em; font-size: 1em; }
+    button { padding: 1em; margin: 1em; font-size: 1em; }
     #japanese, #chinese, #pinyin { font-size: 1.5em; margin: 1em 0; }
+    .female-button { background-color: pink; }
+    .male-button { background-color: lightblue; }
   </style>
 </head>
 <body>
@@ -17,10 +19,9 @@
   <button onclick="generateRandomDate()">日付を生成する</button>
   <button onclick="showChineseText()">中国語で表示</button>
   <button onclick="showChinesePinyin()">声調記号付きピンインで表示</button>
-  <div style="display: inline-flex; align-items: center; gap: 1em;">
-    <select id="voiceSelect"></select>
-    <button onclick="playChineseAudio()">中国語音声を再生</button>
-  </div>
+  <br>
+  <button onclick="playChineseAudio('Ting-Ting')" class="female-button">女性の音声</button>
+  <button onclick="playChineseAudio('Li-Mu')" class="male-button">男性の音声</button>
 
   <script>
     const weekdays = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
@@ -54,31 +55,20 @@
     }
 
     function getMaxDay(month) {
-      return new Date(2024, month, 0).getDate(); // 2024はうるう年
+      return new Date(2024, month, 0).getDate();
     }
 
     let currentDate = null;
-    let voices = [];
+    let voiceList = [];
 
-    function populateVoiceList() {
-      voices = speechSynthesis.getVoices()
-        .filter(voice => ["Google 普通话（中国大陆）", "Ting-Ting", "Li-Mu"].includes(voice.name));
-
-      const select = document.getElementById('voiceSelect');
-      select.innerHTML = '';
-
-      voices.forEach((voice, i) => {
-        const option = document.createElement('option');
-        option.value = i;
-        option.text = `${voice.name} (${voice.lang})`;
-        select.appendChild(option);
-      });
+    function loadVoices() {
+      voiceList = speechSynthesis.getVoices();
     }
 
     if (typeof speechSynthesis !== 'undefined') {
-      populateVoiceList();
+      loadVoices();
       if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = populateVoiceList;
+        speechSynthesis.onvoiceschanged = loadVoices;
       }
     }
 
@@ -89,11 +79,7 @@
       const date = new Date(2024, month - 1, day);
       const weekdayIndex = date.getDay();
 
-      currentDate = {
-        month,
-        day,
-        weekdayIndex
-      };
+      currentDate = { month, day, weekdayIndex };
 
       document.getElementById("japanese").innerText = `${month}月${day}日（${weekdays[weekdayIndex]}）`;
       document.getElementById("chinese").innerText = "";
@@ -106,8 +92,7 @@
       const monthHanzi = `${numberToChinese(month)}月`;
       const dayHanzi = `${numberToChinese(day)}号`;
       const weekday = weekdaysChinese[weekdayIndex];
-      const chineseText = `${monthHanzi}${dayHanzi}（${weekday.hanzi}）`;
-      document.getElementById("chinese").innerText = chineseText;
+      document.getElementById("chinese").innerText = `${monthHanzi}${dayHanzi}（${weekday.hanzi}）`;
     }
 
     function showChinesePinyin() {
@@ -116,11 +101,10 @@
       const weekday = weekdaysChinese[weekdayIndex];
       const monthPinyin = numberPinyinMap[month] + " yuè";
       const dayPinyin = numberPinyinMap[day] + " hào";
-      const pinyinText = `${monthPinyin} ${dayPinyin} (${weekday.pinyin})`;
-      document.getElementById("pinyin").innerText = pinyinText;
+      document.getElementById("pinyin").innerText = `${monthPinyin} ${dayPinyin} (${weekday.pinyin})`;
     }
 
-    function playChineseAudio() {
+    function playChineseAudio(voiceName) {
       if (!currentDate) return;
       const { month, day, weekdayIndex } = currentDate;
       const monthHanzi = `${numberToChinese(month)}月`;
@@ -130,9 +114,9 @@
       utterance.lang = 'zh-CN';
       utterance.rate = 0.5;
 
-      const selectedVoice = voices[document.getElementById('voiceSelect').value];
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
+      const voice = voiceList.find(v => v.name === voiceName);
+      if (voice) {
+        utterance.voice = voice;
       }
 
       speechSynthesis.speak(utterance);
@@ -140,3 +124,4 @@
   </script>
 </body>
 </html>
+
